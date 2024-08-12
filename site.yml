@@ -1,0 +1,37 @@
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+    - name: install Ubuntu updates
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+      when: ansible_distribution == "Ubuntu"
+
+    - name: install Fedora updates
+      ansible.builtin.dnf:
+        update_only: true
+        update_cache: true
+      when: ansible_distribution == "Fedora"
+
+- hosts: web_servers
+  become: true
+  tasks:
+
+    - name: install apache on web servers
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - libapache2-mod-php
+      when: ansible_distribution == "Ubuntu"
+
+- hosts: db_servers
+  become: true
+  tasks:
+
+    - name: install mariadb on db servers
+      ansible.builtin.dnf:
+        name: mariadb
+        state: latest
+      when: ansible_distribution == "Fedora"
