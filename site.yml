@@ -19,12 +19,46 @@
   become: true
   tasks:
 
-    - name: install apache on web servers
+    - name: install apache on web servers (Ubuntu)
       ansible.builtin.apt:
         name:
           - apache2
           - libapache2-mod-php
       when: ansible_distribution == "Ubuntu"
+
+    - name: install apache on web servers (Fedora)
+      ansible.builtin.dnf:
+        name: [httpd, php]
+      when: ansible_distribution == "Fedora"
+
+    - name: start apache on web servers (Fedora)
+      ansible.builtin.service:
+        name: httpd
+        state: started
+      when: ansible_distribution == "Fedora"
+
+    - name: change admin email
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: 'ServerAdmin someone@somewhere.net'
+      when: ansible_distribution == "Fedora"
+      register: httpd
+
+    - name: restart apache when admin email is changed (Fedora)
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+      when: httpd.changed
+
+    - name: copy files to web servers
+      tags: apache,ubuntu
+      ansible.builtin.copy:
+        src: default_site.html
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: 0644
 
 - hosts: db_servers
   become: true
